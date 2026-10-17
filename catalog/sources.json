@@ -1,0 +1,7 @@
+{
+  "sources": [
+    { "id": "agent-skills", "repository": "local://agent-skills", "status": "development-only; replace with public repository URL before publication" },
+    { "id": "openai-skills", "repository": "https://github.com/openai/skills.git", "pinnedRef": "49f948faa9258a0c61caceaf225e179651397431", "reviewStatus": "unreviewed" },
+    { "id": "anthropic-skills", "repository": "https://github.com/anthropics/skills.git", "pinnedRef": "dbd4588f9e1033efb41dad4bef2f7947c8993d44", "reviewStatus": "unreviewed" }
+  ]
+}

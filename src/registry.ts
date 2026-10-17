@@ -1,0 +1,24 @@
+export function findSkill(catalog: any[], skillId: string): any {
+    const skill = catalog.find((entry) => entry.id === skillId);
+    if (!skill) throw new Error(`Unknown skill: ${skillId}`);
+    return skill;
+}
+
+export function validateCatalog(catalog: any[]): string[] {
+    const errors: string[] = [];
+    for (const skill of catalog) {
+        if (!/^[a-z0-9-]+$/.test(skill.id ?? '')) errors.push('Invalid skill id.');
+        if (!skill.source?.ref || skill.source.ref === 'UNPUBLISHED') errors.push(`${skill.id}: source ref is not publishable.`);
+        if (!skill.license) errors.push(`${skill.id}: license is required.`);
+        if (skill.source?.path?.split(/[\\/]/).includes('..')) errors.push(`${skill.id}: source path traversal is prohibited.`);
+    }
+    return errors;
+}
+
+export function resolvePreset(catalog: { skills: any[] }, preset: { skills: string[] }): any[] {
+    return preset.skills.map((id) => {
+        const skill = findSkill(catalog.skills, id);
+        if (!skill.security?.reviewed) throw new Error(`${id} is not reviewed and cannot be installed through a preset.`);
+        return skill;
+    });
+}
