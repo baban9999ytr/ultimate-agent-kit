@@ -4,7 +4,7 @@ import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { adapters, parseAgents } from './adapters.js';
-import { installPreset, installSkill, uninstallSkill } from './installer.js';
+import { installPreset, installSkill, uninstallSkill, updateSkill } from './installer.js';
 import { findSkill, validateCatalog } from './registry.js';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const catalog = JSON.parse(await readFile(join(root, 'catalog/skills.json'), 'utf8'));
@@ -40,7 +40,9 @@ else if (command === 'install' && value === '--preset') {
 }
 else if (command === 'install' && value)
     output(await Promise.all(agents().map((agent) => installSkill({ catalog: catalog.skills, skillId: value, agent, scopeRoot: scopeRoot(), overwrite: args.includes('--overwrite'), dryRun: args.includes('--dry-run') }))));
+else if (command === 'update' && value)
+    output(await Promise.all(agents().map((agent) => updateSkill({ catalog: catalog.skills, skillId: value, agent, scopeRoot: scopeRoot(), dryRun: args.includes('--dry-run') }))));
 else if (command === 'uninstall' && value)
     output(await Promise.all(agents().map((agent) => uninstallSkill({ skillId: value, agent, scopeRoot: scopeRoot() }))));
 else
-    output('Usage: ultimate-agent-kit <list|search|show|verify|install|uninstall> [skill] --agent codex,cursor [--global|--project path] [--json]');
+    output('Usage: ultimate-agent-kit <list|search|show|verify|install|update|uninstall> [skill] --agent codex,cursor [--global|--project path] [--json]');

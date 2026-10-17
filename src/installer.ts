@@ -1,4 +1,4 @@
-import { access, cp, lstat, mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
+import { access, cp, lstat, mkdir, mkdtemp, open, readFile, readdir, rename, rm, unlink, writeFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { dirname, join, relative, resolve, sep } from 'node:path';
@@ -49,8 +49,14 @@ async function acquire(source: any): Promise<{ path: string; cleanup: () => Prom
 
 async function readLock(scopeRoot: string): Promise<any> { const path = join(scopeRoot, lockfile); return await exists(path) ? JSON.parse(await readFile(path, 'utf8')) : { version: 1, installs: [] }; }
 async function writeLock(scopeRoot: string, lock: any): Promise<void> { await mkdir(scopeRoot, { recursive: true }); await writeFile(join(scopeRoot, lockfile), JSON.stringify(lock, null, 2) + '\n'); }
+async function withOperationLock<T>(scopeRoot: string, operation: () => Promise<T>): Promise<T> {
+    await mkdir(scopeRoot, { recursive: true }); const path = join(scopeRoot, '.ultimate-agent-kit.operation.lock'); let handle: any;
+    try { handle = await open(path, 'wx'); await handle.writeFile(JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() })); return await operation(); }
+    catch (error: any) { if (error?.code === 'EEXIST') throw new Error('Another Ultimate Agent Kit operation is active for this scope.'); throw error; }
+    finally { await handle?.close(); if (handle) await unlink(path).catch(() => {}); }
+}
 
-export async function installSkill(options: { catalog: any[]; skillId: string; agent: AgentName; scopeRoot: string; overwrite?: boolean; dryRun?: boolean }): Promise<any> {
+async function installUnlocked(options: { catalog: any[]; skillId: string; agent: AgentName; scopeRoot: string; overwrite?: boolean; dryRun?: boolean }): Promise<any> {
     const skill = findSkill(options.catalog, options.skillId); if (!skill.security?.reviewed) throw new Error(`${skill.id} is unreviewed and cannot be installed.`);
     if (skill.compatibility?.[options.agent]?.install !== 'verified') throw new Error(`${skill.id} is not installation-verified for ${options.agent}.`);
     const source = await acquire(skill.source); try {
@@ -64,6 +70,18 @@ export async function installSkill(options: { catalog: any[]; skillId: string; a
         const lock = await readLock(options.scopeRoot); lock.installs = lock.installs.filter((entry: any) => !(entry.skillId === skill.id && entry.agent === options.agent)); lock.installs.push({ skillId: skill.id, agent: options.agent, destination, sourceRef: skill.source.ref, treeHash: inspection.hash, installedAt: new Date().toISOString() }); await writeLock(options.scopeRoot, lock);
         return { destination, treeHash: inspection.hash, bytes: inspection.bytes };
     } finally { await source.cleanup(); }
+}
+
+export async function installSkill(options: { catalog: any[]; skillId: string; agent: AgentName; scopeRoot: string; overwrite?: boolean; dryRun?: boolean }): Promise<any> {
+    if (options.dryRun) return installUnlocked(options);
+    return withOperationLock(options.scopeRoot, () => installUnlocked(options));
+}
+
+export async function updateSkill(options: { catalog: any[]; skillId: string; agent: AgentName; scopeRoot: string; dryRun?: boolean }): Promise<any> {
+    const lock = await readLock(options.scopeRoot); const installed = lock.installs.find((entry: any) => entry.skillId === options.skillId && entry.agent === options.agent);
+    if (!installed) throw new Error('No managed installation found to update.'); const next = findSkill(options.catalog, options.skillId);
+    if (options.dryRun) return { dryRun: true, from: installed.sourceRef, to: next.source.ref, changed: installed.sourceRef !== next.source.ref };
+    return installSkill({ ...options, overwrite: true });
 }
 
 export async function uninstallSkill(options: { skillId: string; agent: AgentName; scopeRoot: string; force?: boolean }): Promise<{ removed: boolean }> { const lock = await readLock(options.scopeRoot); const entry = lock.installs.find((item: any) => item.skillId === options.skillId && item.agent === options.agent); if (!entry) throw new Error('No managed installation found.'); const expected = destinationFor(options.scopeRoot, options.agent, options.skillId); if (resolve(entry.destination) !== resolve(expected)) throw new Error('Lockfile destination does not match the managed adapter path.'); if (!options.force && (await inspectTree(entry.destination)).hash !== entry.treeHash) throw new Error('Installed skill was modified; use --force only after review.'); await rm(entry.destination, { recursive: true, force: true }); lock.installs = lock.installs.filter((item: any) => item !== entry); await writeLock(options.scopeRoot, lock); return { removed: true }; }
