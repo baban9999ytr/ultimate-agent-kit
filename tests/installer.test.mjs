@@ -31,10 +31,19 @@ test('rejects unsafe paths and unreviewed preset entries', async () => {
     assert.throws(() => resolvePreset({ skills: [{ id: 'safe', security: { reviewed: true } }, { id: 'pending', security: { reviewed: false } }] }, { skills: ['safe', 'pending'] }));
 });
 
-test('resolves an original development skill from its pinned local git source', async (t) => {
+test('rejects traversal paths and symlinked source entries before installation', async (t) => {
+    const { root, source } = await fixture();
+    t.after(() => rm(root, { recursive: true, force: true }));
+    await assert.rejects(() => installSkill({ catalog: [{ id: 'traversal', source: { type: 'git', repository: 'https://github.com/baban9999ytr/agent-skills.git', path: '../escape', ref: '61ae451d08093a42ee336280cc615c460c9e90d6' }, security: { reviewed: true }, compatibility: { codex: { install: 'verified' } } }], skillId: 'traversal', agent: 'codex', scopeRoot: root }), /traversal-free/);
+    const link = join(source, 'unexpected-link');
+    try { await (await import('node:fs/promises')).symlink(join(source, 'SKILL.md'), link); } catch { return; }
+    await assert.rejects(() => installSkill({ catalog: [{ id: 'sample-skill', source: { type: 'local', path: source, ref: 'sha256:test' }, security: { reviewed: true }, compatibility: { codex: { install: 'verified' } } }], skillId: 'sample-skill', agent: 'codex', scopeRoot: join(root, 'target') }), /Unsafe source entry/);
+});
+
+test('installs the reviewed public Apple skill from its pinned GitHub commit into an isolated target', async (t) => {
     const root = await mkdtemp(join(tmpdir(), 'ultimate-agent-kit-'));
     t.after(() => rm(root, { recursive: true, force: true }));
-    const catalog = [{ id: 'apple-design-expert', source: { type: 'git', repository: 'local://agent-skills', path: 'skills/apple-design-expert', ref: '635092f8cd9177ede8bfa0e24a333827152c5ea2' }, security: { reviewed: true }, compatibility: { 'gemini-cli': { install: 'verified' } } }];
+    const catalog = [{ id: 'apple-design-expert', source: { type: 'git', repository: 'https://github.com/baban9999ytr/agent-skills.git', path: 'skills/apple-design-expert', ref: '61ae451d08093a42ee336280cc615c460c9e90d6' }, security: { reviewed: true }, compatibility: { 'gemini-cli': { install: 'verified' } } }];
     const installed = await installSkill({ catalog, skillId: 'apple-design-expert', agent: 'gemini-cli', scopeRoot: root });
     assert.equal((await readFile(join(installed.destination, 'SKILL.md'), 'utf8')).includes('Apple Design Expert'), true);
 });
@@ -46,5 +55,5 @@ test('dry-run preset resolves reviewed compatible skills without writing files',
     const catalog = [{ id: 'sample-skill', source: { type: 'local', path: source, ref: 'sha256:test' }, security: { reviewed: true }, compatibility: { codex: { install: 'verified' } } }];
     const result = await installPreset({ catalog, preset: { skills: ['sample-skill'] }, agent: 'codex', scopeRoot: root, dryRun: true });
     assert.equal(result.dryRun, true);
-    await assert.rejects(() => readFile(join(root, '.ultimate-agent-kit.json'), 'utf8'));
+    await assert.rejects(() => readFile(join(root, '.ultimate-agent-kit.lock.json'), 'utf8'));
 });

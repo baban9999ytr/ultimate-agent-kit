@@ -1,0 +1,9 @@
+node_modules/
+coverage/
+.ultimate-agent-kit.lock.json
+.ultimate-agent-kit.json
+.codex/
+.cursor/
+.claude/
+.gemini/
+*.log

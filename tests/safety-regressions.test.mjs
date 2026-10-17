@@ -19,15 +19,15 @@ test('dry run in an isolated consumer directory creates no installation artifact
     t.after(() => rm(consumer, { recursive: true, force: true }));
     const result = await run(process.execPath, ['dist/cli.js', 'install', 'apple-design-expert', '--project', consumer, '--dry-run'], { cwd: process.cwd() });
     assert.match(result.stdout, /dryRun/);
-    await assert.rejects(() => readFile(join(consumer, '.ultimate-agent-kit.json'), 'utf8'));
+    await assert.rejects(() => readFile(join(consumer, '.ultimate-agent-kit.lock.json'), 'utf8'));
 });
 
 test('uninstall rejects a manifest that points outside its adapter destination', async (t) => {
     const root = await mkdtemp(join(tmpdir(), 'uak-cleanup-')); const outside = join(root, 'outside');
     t.after(() => rm(root, { recursive: true, force: true }));
     await mkdir(outside); await writeFile(join(outside, 'keep.txt'), 'user file');
-    await writeFile(join(root, '.ultimate-agent-kit.json'), JSON.stringify({ installs: [{ skillId: 'sample-skill', agent: 'codex', destination: outside, treeHash: 'x' }] }));
-    await assert.rejects(() => uninstallSkill({ skillId: 'sample-skill', agent: 'codex', scopeRoot: root }), /Manifest destination/);
+    await writeFile(join(root, '.ultimate-agent-kit.lock.json'), JSON.stringify({ installs: [{ skillId: 'sample-skill', agent: 'codex', destination: outside, treeHash: 'x' }] }));
+    await assert.rejects(() => uninstallSkill({ skillId: 'sample-skill', agent: 'codex', scopeRoot: root }), /Lockfile destination/);
     assert.equal(await readFile(join(outside, 'keep.txt'), 'utf8'), 'user file');
 });
 
