@@ -10,9 +10,16 @@ import { findSkill, validateCatalog } from './registry.js';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const catalog = JSON.parse(await readFile(join(root, 'catalog/skills.json'), 'utf8'));
 const args = process.argv.slice(2); const command = args.shift(); const value = args.shift();
-const flag = (name: string): string | undefined => args[args.indexOf(name) + 1];
+const flag = (name: string): string | undefined => {
+    const index = args.indexOf(name);
+    return index === -1 ? undefined : args[index + 1];
+};
 const json = args.includes('--json'); const output = (result: unknown) => console.log(json ? JSON.stringify(result, null, 2) : typeof result === 'string' ? result : JSON.stringify(result, null, 2));
-const scopeRoot = (): string => args.includes('--global') ? homedir() : resolve(flag('--project') ?? process.cwd());
+const scopeRoot = (): string => {
+    const selected = args.includes('--global') ? homedir() : resolve(flag('--project') ?? process.cwd());
+    if (selected === resolve(root)) throw new Error('Refusing to install into the ultimate-agent-kit repository root. Use a consumer project path or --global.');
+    return selected;
+};
 const agents = (): any[] => parseAgents(flag('--agent') ?? 'codex');
 
 if (args.includes('--global') && args.includes('--project')) throw new Error('Choose either --global or --project, not both.');
