@@ -1,38 +1,38 @@
 #!/usr/bin/env node
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { adapters } from './adapters.js';
-import { installSkill, uninstallSkill } from './installer.js';
-import { installPreset } from './installer.js';
+import { adapters, parseAgents } from './adapters.js';
+import { installPreset, installSkill, uninstallSkill } from './installer.js';
 import { findSkill, validateCatalog } from './registry.js';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const catalog = JSON.parse(await readFile(join(root, 'catalog/skills.json'), 'utf8'));
-const [command, value, ...rest] = process.argv.slice(2);
-const json = rest.includes('--json');
-const output = (value) => console.log(json ? JSON.stringify(value, null, 2) : typeof value === 'string' ? value : JSON.stringify(value, null, 2));
+const args = process.argv.slice(2);
+const command = args.shift();
+const value = args.shift();
+const flag = (name) => args[args.indexOf(name) + 1];
+const json = args.includes('--json');
+const output = (result) => console.log(json ? JSON.stringify(result, null, 2) : typeof result === 'string' ? result : JSON.stringify(result, null, 2));
+const scopeRoot = () => args.includes('--global') ? homedir() : resolve(flag('--project') ?? process.cwd());
+const agents = () => parseAgents(flag('--agent') ?? 'codex');
+if (args.includes('--global') && args.includes('--project'))
+    throw new Error('Choose either --global or --project, not both.');
 if (command === 'list')
     output(catalog.skills.map((skill) => ({ id: skill.id, description: skill.description, reviewed: skill.security.reviewed })));
 else if (command === 'search')
     output(catalog.skills.filter((skill) => JSON.stringify(skill).toLowerCase().includes((value ?? '').toLowerCase())));
 else if (command === 'verify')
-    output({ errors: validateCatalog(catalog.skills), adapters });
-else if (command === 'install' && value) {
-    if (value === '--preset') {
-        const presetId = rest[0];
-        const preset = JSON.parse(await readFile(join(root, `presets/${presetId}.json`), 'utf8'));
-        const agent = rest[rest.indexOf('--agent') + 1] ?? 'codex';
-        output(await installPreset({ catalog: catalog.skills, preset, agent, scopeRoot: process.cwd(), dryRun: rest.includes('--dry-run') }));
-        process.exit(0);
-    }
-    const agent = (rest[rest.indexOf('--agent') + 1] ?? 'codex');
-    output(await installSkill({ catalog: catalog.skills, skillId: value, agent, scopeRoot: process.cwd() }));
-}
-else if (command === 'uninstall' && value) {
-    const agent = (rest[rest.indexOf('--agent') + 1] ?? 'codex');
-    output(await uninstallSkill({ skillId: value, agent, scopeRoot: process.cwd() }));
-}
+    output({ catalogErrors: validateCatalog(catalog.skills), adapters });
 else if (command === 'show' && value)
     output(findSkill(catalog.skills, value));
+else if (command === 'install' && value === '--preset') {
+    const preset = JSON.parse(await readFile(join(root, `presets/${args.shift()}.json`), 'utf8'));
+    output(await Promise.all(agents().map((agent) => installPreset({ catalog: catalog.skills, preset, agent, scopeRoot: scopeRoot(), dryRun: args.includes('--dry-run') }))));
+}
+else if (command === 'install' && value)
+    output(await Promise.all(agents().map((agent) => installSkill({ catalog: catalog.skills, skillId: value, agent, scopeRoot: scopeRoot(), overwrite: args.includes('--overwrite'), dryRun: args.includes('--dry-run') }))));
+else if (command === 'uninstall' && value)
+    output(await Promise.all(agents().map((agent) => uninstallSkill({ skillId: value, agent, scopeRoot: scopeRoot() }))));
 else
-    output('Usage: ultimate-agent-kit <list|search|show|verify|install|uninstall> [skill] [--agent codex] [--json]');
+    output('Usage: ultimate-agent-kit <list|search|show|verify|install|uninstall> [skill] --agent codex,cursor [--global|--project path] [--json]');

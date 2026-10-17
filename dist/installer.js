@@ -41,6 +41,8 @@ export async function installSkill(options) {
     if (advisories.length)
         throw new Error(`${skill.id} has security advisories: ${advisories.join('; ')}`);
     const destination = destinationFor(options.scopeRoot, options.agent, skill.id);
+    if (options.dryRun)
+        return { dryRun: true, destination, advisories };
     if (await exists(destination)) {
         if (!options.overwrite)
             throw new Error(`${skill.id} already exists at ${destination}; use an explicit overwrite decision.`);

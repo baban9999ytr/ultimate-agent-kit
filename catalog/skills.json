@@ -5,7 +5,7 @@
       "name": "Apple Design Expert",
       "description": "Accessible, polished, Apple-inspired interface design guidance.",
       "category": "design",
-      "source": { "type": "git", "repository": "local://agent-skills", "path": "skills/apple-design-expert", "ref": "635092f8cd9177ede8bfa0e24a333827152c5ea2" },
+      "source": { "type": "git", "repository": "local://agent-skills", "path": "skills/apple-design-expert", "ref": "baf3eb0da12f7eae0af4ba23fe054a1842e89675" },
       "license": "MIT",
       "compatibility": { "codex": { "install": "verified", "runtime": "not-tested" }, "cursor": { "install": "verified", "runtime": "not-tested" }, "gemini-cli": { "install": "verified", "runtime": "not-tested" }, "claude-code": { "install": "pending", "runtime": "not-tested" }, "github-copilot": { "install": "sdk-session-only", "runtime": "not-tested" } },
       "security": { "reviewed": true },

@@ -27,7 +27,7 @@ async function readManifest(scopeRoot: string): Promise<any> {
     return (await exists(path)) ? JSON.parse(await readFile(path, 'utf8')) : { installs: [] };
 }
 
-export async function installSkill(options: { catalog: any[]; skillId: string; agent: AgentName; scopeRoot: string; overwrite?: boolean }): Promise<any> {
+export async function installSkill(options: { catalog: any[]; skillId: string; agent: AgentName; scopeRoot: string; overwrite?: boolean; dryRun?: boolean }): Promise<any> {
     const skill = findSkill(options.catalog, options.skillId);
     if (!skill.security?.reviewed) throw new Error(`${skill.id} is unreviewed and cannot be installed.`);
     if (skill.compatibility?.[options.agent]?.install !== 'verified') throw new Error(`${skill.id} is not installation-verified for ${options.agent}.`);
@@ -36,6 +36,7 @@ export async function installSkill(options: { catalog: any[]; skillId: string; a
     const advisories = scanSkillText(skillText);
     if (advisories.length) throw new Error(`${skill.id} has security advisories: ${advisories.join('; ')}`);
     const destination = destinationFor(options.scopeRoot, options.agent, skill.id);
+    if (options.dryRun) return { dryRun: true, destination, advisories };
     if (await exists(destination)) {
         if (!options.overwrite) throw new Error(`${skill.id} already exists at ${destination}; use an explicit overwrite decision.`);
         await rm(destination, { recursive: true, force: true });

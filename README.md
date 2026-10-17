@@ -10,11 +10,12 @@ node dist/cli.js list
 node dist/cli.js search design
 node dist/cli.js verify --json
 node dist/cli.js install --preset apple-designer --agent codex --dry-run --json
-node dist/cli.js install apple-design-expert --agent gemini-cli
-node dist/cli.js uninstall apple-design-expert --agent gemini-cli
+node dist/cli.js install apple-design-expert --agent codex --global
+node dist/cli.js install apple-design-expert --agent codex,cursor --project .
+node dist/cli.js uninstall apple-design-expert --agent gemini-cli --project .
 ```
 
-`install` currently supports reviewed local sources and the bundled development `local://agent-skills` source. Remote Git fetching, global installation, and remote update are deliberately not yet implemented; the CLI refuses them rather than making an unsafe guess.
+`install` supports reviewed local sources and the bundled development `local://agent-skills` source, scoped explicitly with `--global` or `--project`. It never executes skill scripts. Remote Git fetching and remote update remain deliberately disabled until the pinned public `agent-skills` release is repaired and a checkout verifier is complete.
 
 ## Architecture
 
