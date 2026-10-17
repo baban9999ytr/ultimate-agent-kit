@@ -26,3 +26,6 @@ catalog + presets -> resolver -> security gate -> agent adapter -> atomic copy -
 The catalog uses pinned revisions, explicit review status, license metadata, attribution, and separate installation/runtime compatibility states. Presets only resolve reviewed skills.
 
 See [compatibility](docs/compatibility.md), [architecture](docs/architecture.md), and [security](SECURITY.md).
+
+
+WARNING: Beta — Experimental
