@@ -3,14 +3,26 @@
   "version": "0.1.0",
   "description": "A safe, portable installer for reviewed Agent Skills.",
   "type": "module",
-  "bin": { "ultimate-agent-kit": "dist/cli.js" },
-  "files": ["dist", "catalog", "presets", "README.md", "LICENSE"],
+  "bin": {
+    "ultimate-agent-kit": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "catalog",
+    "presets",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "npm run build && node --test tests/*.test.mjs",
     "check": "npm run build && npm test"
   },
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "license": "MIT",
-  "devDependencies": { "typescript": "^5.9.3" }
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
 }

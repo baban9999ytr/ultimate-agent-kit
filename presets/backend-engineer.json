@@ -1,1 +1,4 @@
-{ "id": "backend-engineer", "skills": ["supabase-architect", "security-auditor", "systematic-debugger"] }
+{
+  "id": "backend-engineer",
+  "skills": ["supabase-architect", "security-auditor", "systematic-debugger"]
+}

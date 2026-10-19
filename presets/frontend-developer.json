@@ -1,1 +1,4 @@
-{ "id": "frontend-developer", "skills": ["apple-design-expert", "visual-qa", "systematic-debugger"] }
+{
+  "id": "frontend-developer",
+  "skills": ["apple-design-expert", "visual-qa", "systematic-debugger"]
+}

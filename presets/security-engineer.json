@@ -1,1 +1,4 @@
-{ "id": "security-engineer", "skills": ["security-auditor", "production-readiness"] }
+{
+  "id": "security-engineer",
+  "skills": ["security-auditor", "production-readiness"]
+}

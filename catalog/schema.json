@@ -7,7 +7,16 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "name", "description", "category", "source", "license", "compatibility", "security"],
+        "required": [
+          "id",
+          "name",
+          "description",
+          "category",
+          "source",
+          "license",
+          "compatibility",
+          "security"
+        ],
         "properties": {
           "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
           "source": { "type": "object", "required": ["type", "ref"] },

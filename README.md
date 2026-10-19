@@ -27,5 +27,4 @@ The catalog uses pinned revisions, explicit review status, license metadata, att
 
 See [compatibility](docs/compatibility.md), [architecture](docs/architecture.md), and [security](SECURITY.md).
 
-
 WARNING: Beta — Experimental
